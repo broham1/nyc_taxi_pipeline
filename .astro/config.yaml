@@ -1,2 +1,4 @@
+postgres:
+  port: "5431"
 project:
   name: nyc-taxi-pipeline
