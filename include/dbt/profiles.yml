@@ -1,0 +1,15 @@
+nyc_taxi_pipeline:
+  target: snowflake_dbt
+  outputs:
+    snowflake_dbt:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      
+      user: DBT_USER
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      
+      role: DBT_DEV_ROLE
+      database: DBT_DEV_DB
+      warehouse: DBT_DEV_WH
+      schema: NYC_TAXI_SCHEMA
+      threads: 4

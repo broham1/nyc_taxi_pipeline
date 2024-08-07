@@ -9,3 +9,8 @@ airflow-webserver.pid
 webserver_config.py
 airflow.cfg
 airflow.db
+/include/dbt/target
+/include/dbt/.user.yml
+/include/dbt/logs
+/include/dbt/dbt_packages
+/include/dbt/package-lock.yml

@@ -1,49 +1,150 @@
-Overview
-========
+# NYC Taxi ELT Pipeline
 
-Welcome to Astronomer! This project was generated after you ran 'astro dev init' using the Astronomer CLI. This readme describes the contents of the project, as well as how to run Apache Airflow on your local machine.
+## Prerequisites:
+### AWS:
+### Snowflake:
+#### Snowflake System Setup Notebook:
+```
+USE ROLE SECURITYADMIN;
 
-Project Contents
-================
+CREATE OR REPLACE ROLE dbt_DEV_ROLE COMMENT='dbt_DEV_ROLE';
+GRANT ROLE dbt_DEV_ROLE TO ROLE SYSADMIN;
 
-Your Astro project contains the following files and folders:
+CREATE OR REPLACE USER dbt_USER PASSWORD='dhj=n"&N7xsUH6De'
+	DEFAULT_ROLE=dbt_DEV_ROLE
+	DEFAULT_WAREHOUSE=dbt_WH
+	COMMENT='dbt User';
+    
+GRANT ROLE dbt_DEV_ROLE TO USER dbt_USER;
 
-- dags: This folder contains the Python files for your Airflow DAGs. By default, this directory includes two example DAGs:
-    - `example_dag_basic`: This DAG shows a simple ETL data pipeline example with three TaskFlow API tasks that run daily.
-    - `example_dag_advanced`: This advanced DAG showcases a variety of Airflow features like branching, Jinja templates, task groups and several Airflow operators.
-- Dockerfile: This file contains a versioned Astro Runtime Docker image that provides a differentiated Airflow experience. If you want to execute other commands or overrides at runtime, specify them here.
-- include: This folder contains any additional files that you want to include as part of your project. It is empty by default.
-- packages.txt: Install OS-level packages needed for your project by adding them to this file. It is empty by default.
-- requirements.txt: Install Python packages needed for your project by adding them to this file. It is empty by default.
-- plugins: Add custom or community plugins for your project to this file. It is empty by default.
-- airflow_settings.yaml: Use this local-only file to specify Airflow Connections, Variables, and Pools instead of entering them in the Airflow UI as you develop DAGs in this project.
+-- Grant privileges to role
+USE ROLE ACCOUNTADMIN;
 
-Deploy Your Project Locally
-===========================
+GRANT CREATE DATABASE ON ACCOUNT TO ROLE dbt_DEV_ROLE;
 
-1. Start Airflow on your local machine by running 'astro dev start'.
+/*---------------------------------------------------------------------------
+Next we will create a virtual warehouse that will be used
+---------------------------------------------------------------------------*/
+USE ROLE SYSADMIN;
 
-This command will spin up 4 Docker containers on your machine, each for a different Airflow component:
+--Create Warehouse for dbt work
+CREATE OR REPLACE WAREHOUSE dbt_DEV_WH
+  WITH WAREHOUSE_SIZE = 'SMALL'
+  AUTO_SUSPEND = 120
+  AUTO_RESUME = true
+  INITIALLY_SUSPENDED = TRUE;
 
-- Postgres: Airflow's Metadata Database
-- Webserver: The Airflow component responsible for rendering the Airflow UI
-- Scheduler: The Airflow component responsible for monitoring and triggering tasks
-- Triggerer: The Airflow component responsible for triggering deferred tasks
+GRANT ALL ON WAREHOUSE dbt_DEV_WH TO ROLE dbt_DEV_ROLE;
+USE ROLE dbt_DEV_ROLE;
 
-2. Verify that all 4 Docker containers were created by running 'docker ps'.
+CREATE OR REPLACE DATABASE dbt_DEV_DB;
+GRANT ALL ON DATABASE dbt_DEV_DB TO ROLE dbt_DEV_ROLE;
 
-Note: Running 'astro dev start' will start your project with the Airflow Webserver exposed at port 8080 and Postgres exposed at port 5432. If you already have either of those ports allocated, you can either [stop your existing Docker containers or change the port](https://docs.astronomer.io/astro/test-and-troubleshoot-locally#ports-are-not-available).
+USE ROLE ACCOUNTADMIN;
 
-3. Access the Airflow UI for your local Airflow project. To do so, go to http://localhost:8080/ and log in with 'admin' for both your Username and Password.
+CREATE OR REPLACE STORAGE INTEGRATION s3_int
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = 'S3'
+  ENABLED = TRUE
+  STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::767397842695:role/MySnowflakeRole'
+  STORAGE_ALLOWED_LOCATIONS = ('s3://snowflake-data-engineering-bucket/');
 
-You should also be able to access your Postgres Database at 'localhost:5432/postgres'.
+DESC INTEGRATION s3_int;
 
-Deploy Your Project to Astronomer
-=================================
+GRANT USAGE ON INTEGRATION s3_int TO ROLE dbt_dev_role;
 
-If you have an Astronomer account, pushing code to a Deployment on Astronomer is simple. For deploying instructions, refer to Astronomer documentation: https://docs.astronomer.io/cloud/deploy-code/
+CREATE OR REPLACE FILE FORMAT my_parquet_format
+  TYPE = 'PARQUET'
 
-Contact
-=======
+CREATE OR REPLACE FILE FORMAT my_csv_format
+    TYPE = 'CSV'
+    FIELD_DELIMITER = ','
+    COMPRESSION = 'AUTO'
+    SKIP_HEADER = 1;
 
-The Astronomer CLI is maintained with love by the Astronomer team. To report a bug or suggest a change, reach out to our support.
+
+GRANT USAGE ON FILE FORMAT my_parquet_format TO ROLE dbt_dev_role;
+GRANT USAGE ON FILE FORMAT my_csv_format TO ROLE dbt_dev_role;
+```
+#### Project Setup Notebook:
+```
+USE ROLE dbt_dev_role;
+
+USE WAREHOUSE dbt_dev_wh;
+
+CREATE OR REPLACE SCHEMA DBT_DEV_DB.nyc_taxi_schema;
+
+CREATE OR REPLACE STAGE DBT_DEV_DB.NYC_TAXI_SCHEMA.YELLOW_TRIPDATA
+  STORAGE_INTEGRATION = s3_int
+  URL = 's3://snowflake-data-engineering-bucket/nyc_taxi/raw/yellow_tripdata'
+  FILE_FORMAT = my_parquet_format;
+
+CREATE OR REPLACE STAGE DBT_DEV_DB.NYC_TAXI_SCHEMA.GREEN_TRIPDATA
+  STORAGE_INTEGRATION = s3_int
+  URL = 's3://snowflake-data-engineering-bucket/nyc_taxi/raw/green_tripdata'
+  FILE_FORMAT = my_parquet_format;
+
+
+CREATE OR REPLACE TABLE DBT_DEV_DB.NYC_TAXI_SCHEMA.TAXI_ZONE_LOOKUP (
+    LocationID INT,
+    Borough VARCHAR(15),
+    Zone VARCHAR(50),
+    service_zone VARCHAR(15)
+)
+
+UPDATE DBT_DEV_DB.NYC_TAXI_SCHEMA.TAXI_ZONE_LOOKUP
+SET 
+    BOROUGH = LTRIM(RTRIM(BOROUGH, '"'), '"'),
+    ZONE = LTRIM(RTRIM(ZONE, '"'), '"'),
+    SERVICE_ZONE = LTRIM(RTRIM(SERVICE_ZONE, '"'), '"')
+
+
+CREATE OR REPLACE EXTERNAL TABLE DBT_DEV_DB.NYC_TAXI_SCHEMA.yellow_tripdata_ext (
+    vendorID INT AS (value:VendorID::INT),
+    tpep_pickup_datetime TIMESTAMP_NTZ AS to_timestamp_ntz((value:tpep_pickup_datetime::VARCHAR)),
+    tpep_dropoff_datetime TIMESTAMP_NTZ AS to_timestamp_ntz((value:tpep_dropoff_datetime::VARCHAR)),
+    trip_distance FLOAT AS (value:trip_distance::FLOAT),
+    PULocationID INT AS (value:PULocationID::INT),
+    DOLocationID INT AS (value:DOLocationID::INT),
+    passenger_count INT AS (value:passenger_count::INT),
+    ratecodeID INT AS (value:RatecodeID::INT),
+    store_and_fwd_flag BOOLEAN AS to_boolean((value:store_and_fwd_flag::VARCHAR)),
+    payment_type INT AS (value:payment_type::INT),
+    fare_amount FLOAT AS (value:fare_amount::FLOAT),
+    extra FLOAT AS (value:extra::FLOAT),
+    mta_tax FLOAT AS (value:mta_tax::FLOAT),
+    improvement_surcharge FLOAT AS (value:improvement_surcharge::FLOAT),
+    tip_amount FLOAT AS (value:tip_amount::FLOAT),
+    tolls_amount FLOAT AS (value:tolls_amount::FLOAT),
+    total_amount FLOAT AS (value:total_amount::FLOAT),
+    congestion_surcharge FLOAT AS (value:congestion_surcharge::FLOAT),
+    airport_fee FLOAT AS (value:airport_fee::FLOAT)
+)
+LOCATION = @YELLOW_TRIPDATA
+FILE_FORMAT = my_parquet_format
+AUTO_REFRESH = TRUE;
+
+CREATE OR REPLACE EXTERNAL TABLE DBT_DEV_DB.NYC_TAXI_SCHEMA.green_tripdata_ext (
+    vendorID INT AS (value:VendorID::INT),
+    lpep_pickup_datetime TIMESTAMP_NTZ AS to_timestamp_ntz((value:lpep_pickup_datetime::VARCHAR)),
+    lpep_dropoff_datetime TIMESTAMP_NTZ AS to_timestamp_ntz((value:lpep_dropoff_datetime::VARCHAR)),
+    trip_distance FLOAT AS (value:trip_distance::FLOAT),
+    PULocationID INT AS (value:PULocationID::INT),
+    DOLocationID INT AS (value:DOLocationID::INT),
+    passenger_count INT AS (value:passenger_count::INT),
+    ratecodeID INT AS (value:RatecodeID::INT),
+    store_and_fwd_flag BOOLEAN AS to_boolean((value:store_and_fwd_flag::VARCHAR)),
+    payment_type INT AS (value:payment_type::INT),
+    fare_amount FLOAT AS (value:fare_amount::FLOAT),
+    extra FLOAT AS (value:extra::FLOAT),
+    mta_tax FLOAT AS (value:mta_tax::FLOAT),
+    improvement_surcharge FLOAT AS (value:improvement_surcharge::FLOAT),
+    tip_amount FLOAT AS (value:tip_amount::FLOAT),
+    tolls_amount FLOAT AS (value:tolls_amount::FLOAT),
+    total_amount FLOAT AS (value:total_amount::FLOAT),
+    trip_type INT AS (value:trip_type::INT)
+)
+LOCATION = @GREEN_TRIPDATA
+FILE_FORMAT = my_parquet_format
+AUTO_REFRESH = TRUE;
+```

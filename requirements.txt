@@ -2,3 +2,6 @@
 pendulum==3.0.0
 requests==2.32.3
 apache-airflow-providers-amazon==8.24.0
+apache-airflow-providers-snowflake==5.5.2
+astronomer-cosmos==1.5.1
+protobuf

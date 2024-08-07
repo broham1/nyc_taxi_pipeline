@@ -1,0 +1,15 @@
+name: 'nyc_taxi_pipeline'
+
+profile: 'nyc_taxi_pipeline'
+
+models:
+  nyc_taxi_pipeline:
+    staging:
+      +materialized: view
+      snowflake_warehouse: DBT_DEV_WH
+    intermediate:
+      +materialized: view
+      snowflake_warehouse: DBT_DEV_WH
+    marts:
+      +materialized: table
+      snowflake_warehouse: DBT_DEV_WH

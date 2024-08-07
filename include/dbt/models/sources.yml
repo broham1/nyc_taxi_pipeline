@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: trip_data
+    schema: NYC_TAXI_SCHEMA
+    tables:
+      - name: yellow_tripdata_ext
+      - name: green_tripdata_ext
+      - name: taxi_zone_lookup
+  - name: location
+    schema: NYC_TAXI_SCHEMA
+    tables:
+      - name: taxi_zone_lookup
+
