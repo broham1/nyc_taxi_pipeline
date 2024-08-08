@@ -1,4 +1,5 @@
 from pendulum import datetime, duration
+import os
 from airflow.decorators import dag, task, task_group
 from airflow.operators.bash import BashOperator
 from airflow.operators.dummy import DummyOperator
@@ -10,13 +11,12 @@ from cosmos.config import RenderConfig
 
 # Declare Static Variables
 TEMPLATE_URL = "https://d37ci6vzurychx.cloudfront.net/trip-data/{type}_{year}-{month}.parquet"
-TYPES = ["yellow_tripdata", "green_tripdata", "fhv_tripdata"]
+TYPES = ["yellow_tripdata", "green_tripdata"]
 YEARS = ["2024"]
 MONTHS = ["01", "02", "03", "04", "05"]
-SRC_DIR = "/usr/local/airflow/include"
-S3_BUCKET_NAME="snowflake-data-engineering-bucket"
-SNOWFLAKE_STAGE = "nyc_taxi_stage"
-PREFIX="nyc_taxi"
+SRC_DIR = os.environ["HOME"]
+S3_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
+PREFIX = "nyc_taxi"
 
 # Set Default Arguements
 default_args = {
@@ -40,10 +40,9 @@ def nyc_taxi_ELT():
     start = DummyOperator(task_id="Begin")
 
     # Create a directory to reference and to store downloaded files
-    create_dir = BashOperator(
-        task_id="create_dir",
-        bash_command="mkdir data"
-    )
+    @task
+    def create_directory():
+        os.makedirs(f"{SRC_DIR}/data", exist_ok=True)
 
     # Defining atomic task for downloading a single file -> called in Extract task Ggroup
     @task(task_id="extract_file")
@@ -51,7 +50,7 @@ def nyc_taxi_ELT():
         import requests
 
         url = TEMPLATE_URL.format(type=type, year=year, month=month)
-        destination = f"{SRC_DIR}/{type}_{year}-{month}.parquet"
+        destination = f"{SRC_DIR}/data/{type}_{year}-{month}.parquet"
 
         try:
             response = requests.get(url)
@@ -77,7 +76,7 @@ def nyc_taxi_ELT():
     def upload_file(year: str, month: str, type: str) -> None:
         import os 
 
-        local_file_path = f"{SRC_DIR}/{type}_{year}-{month}.parquet"
+        local_file_path = f"{SRC_DIR}/data/{type}_{year}-{month}.parquet"
         s3_key = f"{PREFIX}/raw/{type}/{year}/{month}"
         if os.path.exists(local_file_path):
             print(f"File {local_file_path} exists. Proceeding with upload.")
@@ -105,22 +104,31 @@ def nyc_taxi_ELT():
                 for type in TYPES:
                     upload_file(year, month, type)
 
-    # Execute dbt Transformations
-    dbt_transform = DbtTaskGroup(group_id="dbt_modeling", 
+    # Execute dbt dimensional modeling
+    dbt_modeling = DbtTaskGroup(group_id="dbt_modeling", 
                 project_config=DBT_PROJECT_CONFIG, 
                 profile_config=DBT_CONFIG,
                 execution_config=EXECUTION_CONFIG,
                 render_config=RenderConfig(
                     load_method=LoadMode.DBT_LS,
-                    select=["path:models"]
+                    select=["path:models/staging", "path:models/intermediate", "path:models/marts"]
+                ))
+    
+    # Execute dbt models for reporting
+    dbt_reporting = DbtTaskGroup(group_id="dbt_reporting", 
+                project_config=DBT_PROJECT_CONFIG, 
+                profile_config=DBT_CONFIG,
+                execution_config=EXECUTION_CONFIG,
+                render_config=RenderConfig(
+                    load_method=LoadMode.DBT_LS,
+                    select=["path:models/report"]
                 ))
 
     # Finish Dag Run
     end = DummyOperator(task_id="End")
 
     # Set Task Dependancties
-    start >> create_dir >> extract_data_to_local() >> local_to_s3()  >> dbt_transform >> end
-    
+    start >> create_directory() >> extract_data_to_local() >> local_to_s3()  >> dbt_modeling >> dbt_reporting >> end
 
 # Run Dag
 nyc_taxi_ELT()

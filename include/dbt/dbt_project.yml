@@ -13,3 +13,6 @@ models:
     marts:
       +materialized: table
       snowflake_warehouse: DBT_DEV_WH
+    report:
+      +materialized: table
+      snowflake_warehouse: DBT_DEV_WH

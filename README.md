@@ -148,3 +148,5 @@ LOCATION = @GREEN_TRIPDATA
 FILE_FORMAT = my_parquet_format
 AUTO_REFRESH = TRUE;
 ```
+## Metabase Dashboard:
+[![dashboard](taxi_dashboard.png)]
