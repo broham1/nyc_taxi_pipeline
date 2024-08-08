@@ -13,8 +13,8 @@ from cosmos.config import RenderConfig
 TEMPLATE_URL = "https://d37ci6vzurychx.cloudfront.net/trip-data/{type}_{year}-{month}.parquet"
 TYPES = ["yellow_tripdata", "green_tripdata"]
 YEARS = ["2024"]
-MONTHS = ["01", "02", "03", "04", "05"]
-SRC_DIR = os.environ["HOME"]
+MONTHS = ["01", "02", "03", "04"]
+SRC_DIR = "/usr/local/airflow"
 S3_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
 PREFIX = "nyc_taxi"
 
@@ -39,18 +39,13 @@ default_args = {
 def nyc_taxi_ELT():
     start = DummyOperator(task_id="Begin")
 
-    # Create a directory to reference and to store downloaded files
-    @task
-    def create_directory():
-        os.makedirs(f"{SRC_DIR}/data", exist_ok=True)
-
     # Defining atomic task for downloading a single file -> called in Extract task Ggroup
     @task(task_id="extract_file")
     def download_file(year: str, month: str, type: str) -> None:
         import requests
 
         url = TEMPLATE_URL.format(type=type, year=year, month=month)
-        destination = f"{SRC_DIR}/data/{type}_{year}-{month}.parquet"
+        destination = f"{SRC_DIR}/{type}_{year}-{month}.parquet"
 
         try:
             response = requests.get(url)
@@ -76,7 +71,7 @@ def nyc_taxi_ELT():
     def upload_file(year: str, month: str, type: str) -> None:
         import os 
 
-        local_file_path = f"{SRC_DIR}/data/{type}_{year}-{month}.parquet"
+        local_file_path = f"{SRC_DIR}/{type}_{year}-{month}.parquet"
         s3_key = f"{PREFIX}/raw/{type}/{year}/{month}"
         if os.path.exists(local_file_path):
             print(f"File {local_file_path} exists. Proceeding with upload.")
@@ -128,7 +123,7 @@ def nyc_taxi_ELT():
     end = DummyOperator(task_id="End")
 
     # Set Task Dependancties
-    start >> create_directory() >> extract_data_to_local() >> local_to_s3()  >> dbt_modeling >> dbt_reporting >> end
+    start >> extract_data_to_local() >> local_to_s3()  >> dbt_modeling >> dbt_reporting >> end
 
 # Run Dag
 nyc_taxi_ELT()
