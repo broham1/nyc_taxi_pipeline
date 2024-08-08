@@ -161,7 +161,7 @@ git clone git@github.com:broham1/nyc_taxi_pipeline.git
 ```
 - Create your own .env and airflow_settings.yaml files:
 ```
-touch .env && airflow_settings.yaml
+touch .env && touch airflow_settings.yaml
 ```
 - Populate your .env and airflow_settings.yaml files with your information:
 ```
@@ -198,4 +198,4 @@ Here is the Metabase dashboard I made with the reporting tables.
 ![dashboard](taxi_dashboard.png)
 
 ## Conclusion:
-Doing this project allowed me to learn about snowflake, dbt, and dimensional modeling. I wanted to explore data quality tests with dbt, but I realized that since this dataset had a lot of errors in it, the pipeline would not run, so I dropped it. My code is also pretty rough, so I could improve on that front as well.
+Doing this project allowed me to learn about snowflake, dbt, and dimensional modeling. I wanted to explore data quality tests with dbt, but I realized that since this dataset had a lot of errors in it, the pipeline would not run, so I dropped it. Another thing I wanted was for this pipeline to be run on a schedule, but since the TLC data doesn't have a strict update schedule, I decided to just make it a manual pipeline. My code is also pretty rough, so I could improve on that front as well.
