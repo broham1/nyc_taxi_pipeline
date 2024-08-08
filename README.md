@@ -51,8 +51,8 @@ CREATE OR REPLACE STORAGE INTEGRATION s3_int
   TYPE = EXTERNAL_STAGE
   STORAGE_PROVIDER = 'S3'
   ENABLED = TRUE
-  STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::767397842695:role/MySnowflakeRole'
-  STORAGE_ALLOWED_LOCATIONS = ('s3://snowflake-data-engineering-bucket/');
+  STORAGE_AWS_ROLE_ARN = 'INSERT YOUR AWS ROLE ARN'
+  STORAGE_ALLOWED_LOCATIONS = ('INSERT YOUR ALLOWED S3 LOCATIONS');
 
 DESC INTEGRATION s3_int;
 
@@ -81,12 +81,12 @@ CREATE OR REPLACE SCHEMA DBT_DEV_DB.nyc_taxi_schema;
 
 CREATE OR REPLACE STAGE DBT_DEV_DB.NYC_TAXI_SCHEMA.YELLOW_TRIPDATA
   STORAGE_INTEGRATION = s3_int
-  URL = 's3://snowflake-data-engineering-bucket/nyc_taxi/raw/yellow_tripdata'
+  URL = 'INSERT YOUR S3 PATH/nyc_taxi/raw/yellow_tripdata'
   FILE_FORMAT = my_parquet_format;
 
 CREATE OR REPLACE STAGE DBT_DEV_DB.NYC_TAXI_SCHEMA.GREEN_TRIPDATA
   STORAGE_INTEGRATION = s3_int
-  URL = 's3://snowflake-data-engineering-bucket/nyc_taxi/raw/green_tripdata'
+  URL = 'INSERT YOUR S3 PATH/nyc_taxi/raw/green_tripdata'
   FILE_FORMAT = my_parquet_format;
 
 
