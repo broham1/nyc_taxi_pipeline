@@ -1,17 +1,17 @@
 # NYC Taxi ELT Pipeline
-This project is an ELT pipeline that extracts files from the [TLC Trip Record Data Website](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page), loads it into S3 (which is staged to Snowflake), and then runs dbt transformations on the staged data for dimensional modeling and reporting. The reporting models are then used to create a dashboard in Metabase. The goal here to learn about the tools used in modern data engineering.
+This project is an ELT pipeline that extracts files from the <a href="https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page" target="_blank">TLC Trip Record Data Website</a>, loads it into S3 (which is staged to Snowflake), and then runs dbt transformations on the staged data for dimensional modeling and reporting. The reporting models are then used to create a dashboard in Metabase. The goal here to learn about the tools used in modern data engineering.
 
 ## Prerequisites:
 - AWS Account (offers free tiers - credit card required)
 - Snowflake Account (offers free trial - no credit card required)
-- Astro CLI ([directions for download](https://www.astronomer.io/docs/astro/cli/install-cli?tab=mac#install-the-astro-cli))
-- Docker ([directions for download](https://docs.docker.com/get-docker/))
+- Astro CLI (<a href="https://www.astronomer.io/docs/astro/cli/install-cli" target="_blank">directions for download</a>)
+- Docker (<a href="https://docs.docker.com/get-docker/" target="_blank">directions for download</a>)
 
 ### AWS:
-You will need to have an AWS account and create an s3 bucket. The bucket you create will need to be synced to snowflake as a stage, which can be done by following snowflake's guide [here](https://docs.snowflake.com/en/user-guide/data-load-s3-config-storage-integration). You will also need give airflow credentials to access your S3 bucket. I downloaded access keys for my account as a csv and copy-pasted the keys into airflow_settings.yaml. Another thing to set up on your bucket is event notifications so your external table can automatically append new data added to the stage. You can do that by following the instructions [here](https://docs.snowflake.com/en/user-guide/tables-external-s3) after creating the stage and external tables in Snowflake.
+You will need to have an AWS account and create an s3 bucket. The bucket you create will need to be synced to snowflake as a stage, which can be done by following snowflake's guide <a href="https://docs.snowflake.com/en/user-guide/tables-external-s3" target="_blank">here</a>. That guide will also show you how to set up SQS notifications on said bucket so that your external snowflake table can auto-refresh everytime new data is added to the bucket, which you should do after setting up your snowflake project environment. You will also need give airflow credentials to access your S3 bucket. I downloaded access keys for my account as a csv and copy-pasted the keys into airflow_settings.yaml. 
 
 ### Snowflake:
-After configuring your accounts in AWS and Snowflake, you can run these two notebookes to setup your snowflake environment and create the necessary resources for the project. **Note:** The Taxi Zone Lookup table requires you to manually load the CSV into the snowflake table of the same name. You can download it [here](https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv).
+After configuring your accounts in AWS and Snowflake, you can run these two notebookes to setup your snowflake environment and create the necessary resources for the project. **Note:** The Taxi Zone Lookup table requires you to manually load the CSV into the snowflake table of the same name. You can download it <a href="https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv" target="_blank">here</a>.
 
 #### Snowflake System Setup Notebook:
 ```
