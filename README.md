@@ -2,8 +2,8 @@
 This project is an ELT pipeline that extracts files from the [TLC Trip Record Data Website](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page), loads it into S3 (which is staged to Snowflake), and then runs dbt transformations on the staged data for dimensional modeling and reporting. The reporting models are then used to create a dashboard in Metabase. The goal here to learn about the tools used in modern data engineering.
 
 ## Prerequisites:
-- AWS Account (offers free trial)
-- Snowflake Account (offers free trial)
+- AWS Account (offers free tiers - credit card required)
+- Snowflake Account (offers free trial - no credit card required)
 - Astro CLI ([directions for download](https://www.astronomer.io/docs/astro/cli/install-cli?tab=mac#install-the-astro-cli))
 - Docker ([directions for download](https://docs.docker.com/get-docker/))
 
