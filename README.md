@@ -8,10 +8,10 @@ This project is an ELT pipeline that extracts files from the [TLC Trip Record Da
 - Docker ([directions for download](https://docs.docker.com/get-docker/))
 
 ### AWS:
-You will need to have an AWS account and create an s3 bucket. The bucket you create will need to be synced to snowflake as a stage, which can be done by following snowflake's guide [here](https://docs.snowflake.com/en/user-guide/data-load-s3-config-storage-integration). You will also need give airflow credentials to access your S3 bucket. I downloaded access keys for my account as a csv and copy-pasted the keys into airflow_settings.yaml. Another thing to set up on your bucket is event notifications so your external table can automatically append new data added to the stage. You can do that by following the instructions [here](https://docs.snowflake.com/en/user-guide/tables-external-s3).
+You will need to have an AWS account and create an s3 bucket. The bucket you create will need to be synced to snowflake as a stage, which can be done by following snowflake's guide [here](https://docs.snowflake.com/en/user-guide/data-load-s3-config-storage-integration). You will also need give airflow credentials to access your S3 bucket. I downloaded access keys for my account as a csv and copy-pasted the keys into airflow_settings.yaml. Another thing to set up on your bucket is event notifications so your external table can automatically append new data added to the stage. You can do that by following the instructions [here](https://docs.snowflake.com/en/user-guide/tables-external-s3) after creating the stage and external tables in Snowflake.
 
 ### Snowflake:
-After creating the necessary credentials in AWS and Snowflake, you can run these two notebookes to setup your snowflake environment and create the necessary resources for the project. **Note:** The Taxi Zone Lookup table requires you to manually load the CSV into the snowflake table of the same name. You can download it [here](https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv).
+After configuring your accounts in AWS and Snowflake, you can run these two notebookes to setup your snowflake environment and create the necessary resources for the project. **Note:** The Taxi Zone Lookup table requires you to manually load the CSV into the snowflake table of the same name. You can download it [here](https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv).
 
 #### Snowflake System Setup Notebook:
 ```
