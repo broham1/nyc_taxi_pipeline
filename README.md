@@ -155,7 +155,7 @@ AUTO_REFRESH = TRUE;
 ```
 
 ## Running the Pipeline:
-- Clone the repo:
+- Clone the repo into your project directory - type in terminal:
 ```
 git clone git@github.com:broham1/nyc_taxi_pipeline.git
 ```
@@ -167,9 +167,9 @@ touch .env && touch airflow_settings.yaml
 ```
 # .env file
 PROTOCOL_BUFFERS_PYTHON_IMPLMENTATION=python
-SNOWFLAKE_ACCOUNT=
-SNOWFLAKE_PASSWORD=
-S3_BUCKET_NAME=
+SNOWFLAKE_ACCOUNT=YOUR_SNOWFLAKE_ACCOUNT
+SNOWFLAKE_PASSWORD=YOUR_SNOWFLAKE_PASSWORD
+S3_BUCKET_NAME=YOUR_S3_BUCKET_NAME
 ```
 **Note:** SNOWFLAKE_ACCOUNT requires this format: Organization-Account
 ```
@@ -180,8 +180,8 @@ airflow:
       conn_type: aws
       conn_host:
       conn_schema:
-      conn_login: INSERT YOUR AWS ACCESS KEY ID
-      conn_password: INSERT YOUR AWS SECRET ACCESS KEY
+      conn_login: YOUR_AWS_ACCESS_KEY_ID
+      conn_password: YOUR_AWS_SECRET_ACCESS_KEY
       conn_port:
       conn_extra:
   pools:
@@ -192,10 +192,29 @@ airflow:
     - variable_name:
       variable_value:
 ```
+- Starting containers - type in terminal:
+```
+astro dev start
+```
+- Stopping containers - type in terminal:
+ - type in terminal:
+```
+astro dev stop
+```
+- Removing the volumes and containers - type in terminal:
+```
+astro dev kill
+```
+- Go to http:localhost/8080 (username & password both are admin)
+- Trigger nyc_taxi_ELT manually (optionally could be done in terminal)
+- Create your own dashboard in metabase at http:localhost/3000
 
 ## Metabase Dashboard:
 Here is the Metabase dashboard I made with the reporting tables.
 ![dashboard](taxi_dashboard.png)
+
+## Issues:
+Image and container size were an issue for my old laptop. This would result in an astro error saying webserver container failed healthcheck, denying us access to airflow UI or metabase until it was healthy again. This would also result in the credentials in airflow_settings.yaml failing to be passed appropriately, so you would have to manually enter them in the airflow UI under connections. This may not be an issue for you if you have better specs ram than me (2 cores/8gb ram) as you can give docker access to more cpu cores and/or ram. Another issue, possibly related, is it took the metabse quite a while to load up sometimes.
 
 ## Conclusion:
 Doing this project allowed me to learn about snowflake, dbt, and dimensional modeling. I wanted to explore data quality tests with dbt, but I realized that since this dataset had a lot of errors in it, the pipeline would not run, so I dropped it. Another thing I wanted was for this pipeline to be run on a schedule, but since the TLC data doesn't have a strict update schedule, I decided to just make it a manual pipeline. My code is also pretty rough, so I could improve on that front as well. In the future, I'd like to follow best practices in regards to credentials and roles/secrets manager over hard-coded credentials in .env file.
