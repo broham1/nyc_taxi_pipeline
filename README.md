@@ -1,5 +1,5 @@
 # NYC Taxi ELT Pipeline
-This project is an ELT pipeline that extracts files from the [TLC Trip Record Data Website](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page), loads it into S3 (which is staged to Snowflake), and then runs dbt transformations on the staged data for dimensional modeling and reporting. The reporting models are then used to create a dashboard in Metabase.
+This project is an ELT pipeline that extracts files from the [TLC Trip Record Data Website](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page), loads it into S3 (which is staged to Snowflake), and then runs dbt transformations on the staged data for dimensional modeling and reporting. The reporting models are then used to create a dashboard in Metabase. The goal here to learn about the tools used in modern data engineering.
 
 ## Prerequisites:
 - AWS Account (offers free trial)
@@ -8,7 +8,7 @@ This project is an ELT pipeline that extracts files from the [TLC Trip Record Da
 - Docker ([directions for download](https://docs.docker.com/get-docker/))
 
 ### AWS:
-You will need to have an AWS account and create an s3 bucket. The bucket you create will need to be synced to snowflake as a stage, which can be done by following snowflake's guide [here](https://docs.snowflake.com/en/user-guide/data-load-s3-config-storage-integration). You will also need give airflow credentials to access your S3 bucket. I downloaded access keys for my account as a csv and copy-pasted the keys into airflow_settings.yaml. In the future, I'd like to follow best practices and use a role or a secrets manager.
+You will need to have an AWS account and create an s3 bucket. The bucket you create will need to be synced to snowflake as a stage, which can be done by following snowflake's guide [here](https://docs.snowflake.com/en/user-guide/data-load-s3-config-storage-integration). You will also need give airflow credentials to access your S3 bucket. I downloaded access keys for my account as a csv and copy-pasted the keys into airflow_settings.yaml. Another thing to set up on your bucket is event notifications so your external table can automatically append new data added to the stage. You can do that by following the instructions [here](https://docs.snowflake.com/en/user-guide/tables-external-s3).
 
 ### Snowflake:
 After creating the necessary credentials in AWS and Snowflake, you can run these two notebookes to setup your snowflake environment and create the necessary resources for the project. **Note:** The Taxi Zone Lookup table requires you to manually load the CSV into the snowflake table of the same name. You can download it [here](https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv).
@@ -198,4 +198,4 @@ Here is the Metabase dashboard I made with the reporting tables.
 ![dashboard](taxi_dashboard.png)
 
 ## Conclusion:
-Doing this project allowed me to learn about snowflake, dbt, and dimensional modeling. I wanted to explore data quality tests with dbt, but I realized that since this dataset had a lot of errors in it, the pipeline would not run, so I dropped it. Another thing I wanted was for this pipeline to be run on a schedule, but since the TLC data doesn't have a strict update schedule, I decided to just make it a manual pipeline. My code is also pretty rough, so I could improve on that front as well.
+Doing this project allowed me to learn about snowflake, dbt, and dimensional modeling. I wanted to explore data quality tests with dbt, but I realized that since this dataset had a lot of errors in it, the pipeline would not run, so I dropped it. Another thing I wanted was for this pipeline to be run on a schedule, but since the TLC data doesn't have a strict update schedule, I decided to just make it a manual pipeline. My code is also pretty rough, so I could improve on that front as well. In the future, I'd like to follow best practices in regards to credentials and roles/secrets manager over hard-coded credentials in .env file.
