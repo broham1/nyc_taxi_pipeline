@@ -1,5 +1,5 @@
 # NYC Taxi ELT Pipeline
-This project is an ELT pipeline that extracts files from the <a href="https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page" target="_blank">TLC Trip Record Data Website</a>, loads it into S3 (which is staged to Snowflake), and then runs dbt transformations on the staged data for dimensional modeling and reporting. The reporting models are then used to create a dashboard in Metabase. The goal here to learn about the tools used in modern data engineering.
+This project is an ELT pipeline that extracts files from the <a href="https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page" target="_blank">TLC Trip Record Data Website</a>, loads it into S3 (which is staged to Snowflake), and then runs dbt transformations (with Cosmos) on the staged data for dimensional modeling and reporting, all with airflow. The reporting models are then used to create a dashboard in Metabase. The goal here to learn about some of the tools used in modern data engineering.
 
 ## Prerequisites:
 - AWS Account (offers free tiers - credit card required)
